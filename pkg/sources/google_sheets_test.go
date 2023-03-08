@@ -9,6 +9,6 @@ import (
 )
 
 func TestSpreadsheetParse(t *testing.T) {
-	s := sources.NewGoogleSpreadsheet()
+	s := sources.NewGoogleSheets()
 	require.Implements(t, (*pkg.Source)(nil), s)
 }
