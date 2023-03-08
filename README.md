@@ -6,15 +6,16 @@ This app is a parser which takes a source with events and saves to a destination
 
 | Time / Days | Jan 1, Mon | Jan 3, Wed |
 | ----------- | ---------- | ---------- |
-| 12:00       | x          | Ivan       |
-| 12:30       | John       | x          |
-| 13:00       | Michael    | x          |
+| 12:00       |            | Ivan       |
+| 12:30       | John       |            |
+| 13:00       | Michael    |            |
 
 # TODO
 
 - [x] Source, which parses information and returns data.
 - [x] Destination, which takes data from Source and saves somewhere.
-- [ ] Source: link to a Google Spreadsheet
+- [x] Source: link to a Google Spreadsheet
+- [ ] Cmd with destination in memory
 - [ ] Destination: Google Calendar
 
 ## Happy Path
@@ -27,3 +28,4 @@ This app is a parser which takes a source with events and saves to a destination
 - [x] Destination returns error
 - [x] Saver returns error
 - [ ] Source, Destination return different type errors
+- [ ] Google Sheets - error handling
