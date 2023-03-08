@@ -12,8 +12,8 @@ This app is a parser which takes a source with events and saves to a destination
 
 # TODO
 
-- [ ] Source, which parses information and returns data.
-- [ ] Destination, which takes data from Source and saves somewhere.
+- [x] Source, which parses information and returns data.
+- [x] Destination, which takes data from Source and saves somewhere.
 - [ ] Source: link to a Google Spreadsheet
 - [ ] Destination: Google Calendar
 
@@ -27,4 +27,3 @@ This app is a parser which takes a source with events and saves to a destination
 - [x] Destination returns error
 - [x] Saver returns error
 - [ ] Source, Destination return different type errors
-
