@@ -1,6 +1,7 @@
 package sources_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/asahnoln/go-schedule-saver/pkg"
@@ -17,7 +18,7 @@ func TestSpreadsheetParse(t *testing.T) {
 		{Day: "Feb 1, Mon", Time: "14:00", Desc: "Pete"},
 		{Day: "Feb 3, Wed", Time: "13:30", Desc: "Sam"},
 	}
-	m := &sheetsMock{want}
+	m := &sheetsMock{want, nil}
 	s := sources.NewGoogleSheets(m)
 	require.Implements(t, (*pkg.Source)(nil), s)
 
@@ -26,17 +27,26 @@ func TestSpreadsheetParse(t *testing.T) {
 	assert.ElementsMatch(t, want, got)
 }
 
+func TestSheetsError(t *testing.T) {
+	m := &sheetsMock{err: errors.New("sheets error")}
+	s := sources.NewGoogleSheets(m)
+
+	_, err := s.Parse()
+	assert.Error(t, err)
+}
+
 type sheetsMock struct {
 	data []pkg.Event
+	err  error
 }
 
 func (d *sheetsMock) Do(opts ...googleapi.CallOption) (*sheets.ValueRange, error) {
 	return &sheets.ValueRange{
 		Values: [][]interface{}{
 			{"Time / Days", "Feb 1, Mon", "Feb 3, Wed"},
-			{"13:00", "Steve", ""},
+			{"13:00", "Steve", "", "", "Впишите свое имя в ячейку"},
 			{"13:30", "", "Sam"},
-			{"14:00", "Pete", ""},
+			{"14:00", "Pete"},
 		},
-	}, nil
+	}, d.err
 }

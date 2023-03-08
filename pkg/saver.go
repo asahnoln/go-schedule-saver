@@ -12,6 +12,13 @@ type Destination interface {
 	Save([]Event) error
 }
 
+// TODO: Test DestinationFunc?
+type DestinationFunc func([]Event) error
+
+func (f DestinationFunc) Save(e []Event) error {
+	return f(e)
+}
+
 func Save(s Source, d Destination) error {
 	data, err := s.Parse()
 	if err != nil {

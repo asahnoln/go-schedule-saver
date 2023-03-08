@@ -26,15 +26,24 @@ func NewGoogleSheets(d Doer) *GoogleSheets {
 }
 
 func (s *GoogleSheets) Parse() ([]pkg.Event, error) {
-	resp, _ := s.d.Do()
+	resp, err := s.d.Do()
+	if err != nil {
+		return nil, err
+	}
+
 	events := []pkg.Event{}
+	dates := resp.Values[headerRow][valsColumnStart:]
 
-	dates := resp.Values[headerRow]
-	for _, v := range resp.Values[valsRowStart:] {
-		t := v[timeColumn]
+	for _, r := range resp.Values[valsRowStart:] {
+		t := r[timeColumn]
 
-		for c := valsColumnStart; c < len(dates); c++ {
-			desc := v[c].(string)
+		for c, v := range r[valsColumnStart:] {
+			// If extra columns present without header information
+			if c > len(dates)-1 {
+				continue
+			}
+
+			desc := v.(string)
 			if desc == "" {
 				continue
 			}
