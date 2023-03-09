@@ -49,6 +49,19 @@ func TestGoogleCalendarSavesEvents(t *testing.T) {
 		got[2].Start.DateTime)
 }
 
+func TestErrorFromServer(t *testing.T) {
+	fs := errorFakeServer()
+	s, _ := calendar.NewService(context.Background(),
+		option.WithoutAuthentication(),
+		option.WithEndpoint(fs.URL))
+
+	c := dests.NewGoogleCalendar("testCalId", s)
+	err := c.Save([]pkg.Event{
+		{},
+	})
+	require.Error(t, err)
+}
+
 func fakeServer(t *testing.T, got *[]calendar.Event) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var e calendar.Event
@@ -60,5 +73,13 @@ func fakeServer(t *testing.T, got *[]calendar.Event) *httptest.Server {
 		}
 
 		*got = append(*got, e)
+
+		_, _ = w.Write([]byte("{}"))
+	}))
+}
+
+func errorFakeServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "some error", http.StatusInternalServerError)
 	}))
 }

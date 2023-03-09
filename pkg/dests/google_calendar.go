@@ -29,7 +29,7 @@ func (c *GoogleCalendar) Save(es []pkg.Event) error {
 
 		startTime := time.Date(time.Now().Year(), translateMonth(mon), d, h, m, 0, 0, time.Local)
 		endTime := startTime.Add(30 * time.Minute)
-		c.srv.Events.Insert(c.calId, &calendar.Event{
+		_, err := c.srv.Events.Insert(c.calId, &calendar.Event{
 			Summary: e.Desc,
 			Start: &calendar.EventDateTime{
 				DateTime: startTime.Format(time.RFC3339),
@@ -38,7 +38,10 @@ func (c *GoogleCalendar) Save(es []pkg.Event) error {
 				DateTime: endTime.Format(time.RFC3339),
 			},
 		}).Do()
-		// TODO: Проверять ошибки
+
+		if err != nil {
+			return fmt.Errorf("dests gcal save: %w", err)
+		}
 	}
 	return nil
 }
