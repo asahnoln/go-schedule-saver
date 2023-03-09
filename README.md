@@ -16,7 +16,7 @@ This app is a parser which takes a source with events and saves to a destination
 - [x] Destination, which takes data from Source and saves somewhere.
 - [x] Source: link to a Google Spreadsheet
 - [x] Cmd with destination in memory
-- [ ] Destination: Google Calendar
+- [x] Destination: Google Calendar
 
 ## Happy Path
 
