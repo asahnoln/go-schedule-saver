@@ -62,7 +62,35 @@ func TestErrorFromServer(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestCalendarDoesNotSaveDuplicates(t *testing.T) {
+	got := []calendar.Event{
+		{
+			Summary: "Lola",
+			Start: &calendar.EventDateTime{
+				DateTime: time.Date(time.Now().Year(), time.April, 4, 15, 30, 0, 0, time.Local).Format(time.RFC3339),
+			},
+		},
+	}
+	fs := fakeServer(t, &got)
+	s, _ := calendar.NewService(context.Background(),
+		option.WithoutAuthentication(),
+		option.WithEndpoint(fs.URL))
+
+	c := dests.NewGoogleCalendar("testCalId", s)
+
+	want := []pkg.Event{
+		{Day: "Понедельник,\n2 марта", Time: "14:30", Desc: "Terry"},
+		{Day: "Понедельник,\n3 марта", Time: "16:00", Desc: "Mike"},
+		{Day: "Среда,\n4 апреля", Time: "15:30", Desc: "Lola"},
+	}
+	err := c.Save(want)
+	require.NoError(t, err)
+
+	assert.Len(t, got, len(want))
+}
+
 func fakeServer(t *testing.T, got *[]calendar.Event) *httptest.Server {
+	// TODO: Test if calendar id is proper
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var e calendar.Event
 		err := json.NewDecoder(r.Body).Decode(&e)
