@@ -24,12 +24,21 @@ This app is a parser which takes a source with events and saves to a destination
 
 ## Unhappy Path
 
+### General
+
 - [x] Source returns error
 - [x] Destination returns error
 - [x] Saver returns error
 - [ ] Source, Destination return different type errors
-- [x] Google Sheets - error handling when creating
-- [x] Google Sheets - handle edge cases
-- [ ] Google Calendar check for existing events and don't save them
-- [ ] Google Calendar remove existing events if their name is duplicated at different time
-- [ ] Google Calendar uses a map of names => mails to add attendees.
+
+### Google Sheets
+
+- [x] Error handling when creating
+- [x] Handle edge cases
+
+### Google Calendar
+
+- [x] Google Calendar check for existing events and don't save them
+- [ ] Remove existing events if their name is duplicated at different time (actual for the given time range in the sheet)
+- [ ] Uses a map of names => mails to add attendees.
+- [ ] List error handling

@@ -66,6 +66,7 @@ func TestErrorFromServer(t *testing.T) {
 func TestCalendarDoesNotSaveDuplicates(t *testing.T) {
 	got := []calendar.Event{
 		{
+			// FIX: Actually it shouldn't be saved, it should be moved to a different slot
 			Summary: "Terry", // Different Terry event
 			Start: &calendar.EventDateTime{
 				DateTime: time.Date(time.Now().Year(), time.May, 1, 12, 15, 0, 0, time.Local).Format(time.RFC3339),
@@ -94,6 +95,31 @@ func TestCalendarDoesNotSaveDuplicates(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, got, 4)
+}
+
+// TODO: Test for error from list
+
+func TestAddsGuestsAccordingToGivenNames(t *testing.T) {
+	got := []calendar.Event{}
+	fs := fakeServer(t, &got, "guestsCalId")
+	s, _ := calendar.NewService(context.Background(),
+		option.WithoutAuthentication(),
+		option.WithEndpoint(fs.URL))
+
+	mails = map[string]string{
+		"Alex": "alex@mail.com",
+		"Bob":  "bob@mail.com",
+	}
+	c := dests.NewGoogleCalendar("guestsCalId", s, mails)
+
+	want := []pkg.Event{
+		{Day: "Понедельник,\n2 мая", Time: "11:30", Desc: "Alex"},
+		{Day: "Понедельник,\n3 мая", Time: "12:00", Desc: "Bob"},
+	}
+	err := c.Save(want)
+	require.NoError(t, err)
+
+	assert.Equal(t, "alex@mail.com", got[0].Attendees[0].Email)
 }
 
 func fakeServer(t *testing.T, got *[]calendar.Event, calId string) *httptest.Server {
