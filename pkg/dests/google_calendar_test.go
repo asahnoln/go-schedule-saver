@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,13 +19,13 @@ import (
 
 func TestGoogleCalendarSavesEvents(t *testing.T) {
 	got := []calendar.Event{}
-	fs := fakeServer(t, &got)
+	fs := fakeServer(t, &got, "calId")
 	s, err := calendar.NewService(context.Background(),
 		option.WithoutAuthentication(),
 		option.WithEndpoint(fs.URL))
 	require.NoError(t, err)
 
-	c := dests.NewGoogleCalendar("testCalId", s)
+	c := dests.NewGoogleCalendar("calId", s)
 	require.Implements(t, (*pkg.Destination)(nil), c)
 
 	want := []pkg.Event{
@@ -65,23 +66,23 @@ func TestErrorFromServer(t *testing.T) {
 func TestCalendarDoesNotSaveDuplicates(t *testing.T) {
 	got := []calendar.Event{
 		{
-			Summary: "Lola",
+			Summary: "Dora", // Already exists, shouldn't be duplicated
 			Start: &calendar.EventDateTime{
 				DateTime: time.Date(time.Now().Year(), time.April, 4, 15, 30, 0, 0, time.Local).Format(time.RFC3339),
 			},
 		},
 	}
-	fs := fakeServer(t, &got)
+	fs := fakeServer(t, &got, "dupCalId")
 	s, _ := calendar.NewService(context.Background(),
 		option.WithoutAuthentication(),
 		option.WithEndpoint(fs.URL))
 
-	c := dests.NewGoogleCalendar("testCalId", s)
+	c := dests.NewGoogleCalendar("dupCalId", s)
 
 	want := []pkg.Event{
 		{Day: "Понедельник,\n2 марта", Time: "14:30", Desc: "Terry"},
 		{Day: "Понедельник,\n3 марта", Time: "16:00", Desc: "Mike"},
-		{Day: "Среда,\n4 апреля", Time: "15:30", Desc: "Lola"},
+		{Day: "Среда,\n4 апреля", Time: "15:30", Desc: "Dora"},
 	}
 	err := c.Save(want)
 	require.NoError(t, err)
@@ -89,9 +90,27 @@ func TestCalendarDoesNotSaveDuplicates(t *testing.T) {
 	assert.Len(t, got, len(want))
 }
 
-func fakeServer(t *testing.T, got *[]calendar.Event) *httptest.Server {
-	// TODO: Test if calendar id is proper
+func fakeServer(t *testing.T, got *[]calendar.Event, calId string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := strings.Split(r.URL.Path, "/")
+		require.Equal(t, calId, path[2], "google calendar id is wrong")
+
+		// List events
+		if g := *got; r.Method == http.MethodGet {
+			if len(g) > 0 {
+				es := &calendar.Events{
+					Items: []*calendar.Event{
+						&g[0],
+					},
+				}
+
+				resp, _ := es.MarshalJSON()
+				w.Write(resp)
+			}
+			return
+		}
+
+		// Post events
 		var e calendar.Event
 		err := json.NewDecoder(r.Body).Decode(&e)
 		defer r.Body.Close()

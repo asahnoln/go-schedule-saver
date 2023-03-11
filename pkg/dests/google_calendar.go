@@ -21,7 +21,20 @@ func NewGoogleCalendar(calendarId string, srv *calendar.Service) *GoogleCalendar
 }
 
 func (c *GoogleCalendar) Save(es []pkg.Event) error {
+	// calEvents, _ := c.srv.Events.List(c.calId).Do()
+	calEvents, _ := c.srv.Events.List(c.calId).Do()
+	esMap := make(map[string]bool)
+	if calEvents != nil {
+		for _, e := range calEvents.Items {
+			esMap[e.Summary] = true
+		}
+	}
+
 	for _, e := range es {
+		if esMap[e.Desc] {
+			continue
+		}
+
 		var h, m, d int
 		var mon, day string
 		fmt.Sscanf(e.Time, "%2d:%2d", &h, &m)
