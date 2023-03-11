@@ -66,6 +66,12 @@ func TestErrorFromServer(t *testing.T) {
 func TestCalendarDoesNotSaveDuplicates(t *testing.T) {
 	got := []calendar.Event{
 		{
+			Summary: "Terry", // Different Terry event
+			Start: &calendar.EventDateTime{
+				DateTime: time.Date(time.Now().Year(), time.May, 1, 12, 15, 0, 0, time.Local).Format(time.RFC3339),
+			},
+		},
+		{
 			Summary: "Dora", // Already exists, shouldn't be duplicated
 			Start: &calendar.EventDateTime{
 				DateTime: time.Date(time.Now().Year(), time.April, 4, 15, 30, 0, 0, time.Local).Format(time.RFC3339),
@@ -87,7 +93,7 @@ func TestCalendarDoesNotSaveDuplicates(t *testing.T) {
 	err := c.Save(want)
 	require.NoError(t, err)
 
-	assert.Len(t, got, len(want))
+	assert.Len(t, got, 4)
 }
 
 func fakeServer(t *testing.T, got *[]calendar.Event, calId string) *httptest.Server {
@@ -96,12 +102,14 @@ func fakeServer(t *testing.T, got *[]calendar.Event, calId string) *httptest.Ser
 		require.Equal(t, calId, path[2], "google calendar id is wrong")
 
 		// List events
-		if g := *got; r.Method == http.MethodGet {
-			if len(g) > 0 {
+		if r.Method == http.MethodGet {
+			if g := *got; len(g) > 0 {
+				items := []*calendar.Event{}
+				for i := range g {
+					items = append(items, &g[i])
+				}
 				es := &calendar.Events{
-					Items: []*calendar.Event{
-						&g[0],
-					},
+					Items: items,
 				}
 
 				resp, _ := es.MarshalJSON()
