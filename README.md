@@ -39,6 +39,6 @@ This app is a parser which takes a source with events and saves to a destination
 ### Google Calendar
 
 - [x] Google Calendar check for existing events and don't save them
+- [x] Uses a map of names => mails to add attendees.
 - [ ] Remove existing events if their name is duplicated at different time (actual for the given time range in the sheet)
-- [ ] Uses a map of names => mails to add attendees.
 - [ ] List error handling

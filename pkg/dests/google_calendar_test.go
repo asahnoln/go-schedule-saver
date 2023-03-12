@@ -25,7 +25,7 @@ func TestGoogleCalendarSavesEvents(t *testing.T) {
 		option.WithEndpoint(fs.URL))
 	require.NoError(t, err)
 
-	c := dests.NewGoogleCalendar("calId", s)
+	c := dests.NewGoogleCalendar("calId", s, make(map[string]string))
 	require.Implements(t, (*pkg.Destination)(nil), c)
 
 	want := []pkg.Event{
@@ -56,7 +56,7 @@ func TestErrorFromServer(t *testing.T) {
 		option.WithoutAuthentication(),
 		option.WithEndpoint(fs.URL))
 
-	c := dests.NewGoogleCalendar("testCalId", s)
+	c := dests.NewGoogleCalendar("testCalId", s, make(map[string]string))
 	err := c.Save([]pkg.Event{
 		{},
 	})
@@ -84,7 +84,7 @@ func TestCalendarDoesNotSaveDuplicates(t *testing.T) {
 		option.WithoutAuthentication(),
 		option.WithEndpoint(fs.URL))
 
-	c := dests.NewGoogleCalendar("dupCalId", s)
+	c := dests.NewGoogleCalendar("dupCalId", s, make(map[string]string))
 
 	want := []pkg.Event{
 		{Day: "Понедельник,\n2 марта", Time: "14:30", Desc: "Terry"},
@@ -106,7 +106,7 @@ func TestAddsGuestsAccordingToGivenNames(t *testing.T) {
 		option.WithoutAuthentication(),
 		option.WithEndpoint(fs.URL))
 
-	mails = map[string]string{
+	mails := map[string]string{
 		"Alex": "alex@mail.com",
 		"Bob":  "bob@mail.com",
 	}
@@ -122,6 +122,7 @@ func TestAddsGuestsAccordingToGivenNames(t *testing.T) {
 	assert.Equal(t, "alex@mail.com", got[0].Attendees[0].Email)
 }
 
+// TODO: Separate fake server concerns (listing, empty events, etc)
 func fakeServer(t *testing.T, got *[]calendar.Event, calId string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := strings.Split(r.URL.Path, "/")
@@ -129,18 +130,17 @@ func fakeServer(t *testing.T, got *[]calendar.Event, calId string) *httptest.Ser
 
 		// List events
 		if r.Method == http.MethodGet {
-			if g := *got; len(g) > 0 {
-				items := []*calendar.Event{}
-				for i := range g {
-					items = append(items, &g[i])
-				}
-				es := &calendar.Events{
-					Items: items,
-				}
-
-				resp, _ := es.MarshalJSON()
-				w.Write(resp)
+			g := *got
+			items := []*calendar.Event{}
+			for i := range g {
+				items = append(items, &g[i])
 			}
+			es := &calendar.Events{
+				Items: items,
+			}
+
+			resp, _ := es.MarshalJSON()
+			w.Write(resp)
 			return
 		}
 
@@ -151,6 +151,10 @@ func fakeServer(t *testing.T, got *[]calendar.Event, calId string) *httptest.Ser
 
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		if len(e.Attendees) > 0 && e.Attendees[0].Email == "" {
+			t.Fatalf("Attendee email cannot be empty")
 		}
 
 		*got = append(*got, e)
